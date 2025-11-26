@@ -1,5 +1,5 @@
-from src.analysis_result import AnalysisResult
-from src.complexity_metrics import ComplexityMetrics
+from analysis_result import AnalysisResult
+from complexity_metrics import ComplexityMetrics
 # from src.dependency_parser import DependencyParser
 
 

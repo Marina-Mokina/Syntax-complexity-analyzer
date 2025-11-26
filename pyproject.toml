@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "text-complexity-tool"
+version = "1.0.0"
+description = "A Python tool for analyzing syntactic complexity of Russian texts"
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["text-analysis", "nlp", "russian", "syntax", "complexity"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Text Processing :: Linguistic",
+]
+
+dependencies = [
+    "spacy>=3.8.11",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "build>=0.10.0",
+]
+
+[project.scripts]
+text-complexity = "src.main:main"
+
+[tool.text-complexity]
+sentence_endings = [".", "!", "?", "…"]
+russian_vowels = "аеёиоуыэюя"
+vowel_pattern = "[аеёиоуыэюя]"
+
+[tool.text-complexity.readability]
+base = 206.836
+sentence_length = 1.52
+word_length = 65.14
+
+[tool.text-complexity.complexity_weights]
+sentence_length_weight = 0.6
+syllable_complexity_weight = 0.4

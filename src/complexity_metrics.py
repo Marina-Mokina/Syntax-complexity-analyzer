@@ -1,9 +1,20 @@
 import re
-from .config import VOWEL_PATTERN, SENTENCE_ENDINGS, RUSSIAN_VOWELS, READABILITY_COEFFICIENTS
+import tomllib
+from pathlib import Path
 
 
 class ComplexityMetrics:
     """Calculates syntactic complexity metrics"""
+
+    def __init__(self):
+        self.config = self._load_config()
+
+    def _load_config(self) -> dict:
+        """Load configuration from pyproject.toml"""
+        pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
+        with open(pyproject_path, "rb") as f:
+            data = tomllib.load(f)
+        return data.get("tool", {}).get("text-complexity", {})
 
     def calculate_metrics(self, text: str) -> dict:
         """Returns dictionary with complexity metrics"""
@@ -14,17 +25,18 @@ class ComplexityMetrics:
         return {
             "avg_sentence_length": avg_sentence_length,
             "avg_syllables_per_word": avg_syllables,
-            "readability_score": readability
+            "readability_score": readability,
         }
 
     def _avg_sentence_length(self, text: str) -> float:
         """Calculates average sentence length in words"""
         normalized_text = text
-        for ending in SENTENCE_ENDINGS:
+        for ending in self.config.get("sentence_endings", [".", "!", "?", "…"]):
             normalized_text = normalized_text.replace(ending, '.')
-        sentences = [s.strip() for s in normalized_text.split('. ') if s.strip()]
 
+        sentences = [s.strip() for s in normalized_text.split('. ') if s.strip()]
         average_sentence_length = 0.0
+
         if sentences:
             for sentence in sentences:
                 words_in_sentence = len(sentence.split())
@@ -33,19 +45,23 @@ class ComplexityMetrics:
         return average_sentence_length
 
     def _avg_word_length(self, text: str) -> float:
-        """Calculates average word length in syllabls"""
-        words = [word.lower() for word in text.split() if re.search(VOWEL_PATTERN, word.lower())]
+        """Calculates average word length in syllables"""
+        vowel_pattern = self.config.get("vowel_pattern")
+        russian_vowels = self.config.get("russian_vowels")
 
+        words = [word.lower() for word in text.split() if re.search(vowel_pattern, word.lower())]
         average_syllables = 0.0
+
         if words:
             for word in words:
-                syllables_in_word = len([letter for letter in word if letter in RUSSIAN_VOWELS])
+                syllables_in_word = len([letter for letter in word if letter in russian_vowels])
                 average_syllables += syllables_in_word / len(words)
 
         return average_syllables
 
     def _calculate_readability_score(self, avg_sentence_length: float, avg_syllables: float) -> float:
         """Calculates readability score using fres formula"""
-        return (READABILITY_COEFFICIENTS['base']
-                - READABILITY_COEFFICIENTS['sentence_length'] * avg_sentence_length
-                - READABILITY_COEFFICIENTS['word_length'] * avg_syllables)
+        readability_config = self.config.get("readability", {})
+        return (readability_config.get("base")
+                - readability_config.get("sentence_length") * avg_sentence_length
+                - readability_config.get("word_length") * avg_syllables)
