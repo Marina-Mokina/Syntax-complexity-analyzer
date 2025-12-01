@@ -1,26 +1,29 @@
 [build-system]
-requires = ["setuptools>=45", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
-name = "text-complexity-tool"
-version = "1.0.0"
-description = "A Python tool for analyzing syntactic complexity of Russian texts"
+[tool.poetry.scripts]
+analyze-complexity = "syntax_complexity_analyzer.main:main"
+
+[tool.poetry]
+name = "syntax-complexity-analyzer"
+version = "0.1.0"
+description = "Анализатор синтаксической сложности текста для русского языка"
 readme = "README.md"
-requires-python = ">=3.10"
-
-dependencies = [
-    "spacy>=3.8.11",
+packages = [
+    {include = "syntax_complexity_analyzer", from = "src"},
+    {include = "pyproject.toml"}
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "build>=0.10.0",
-]
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+spacy = "3.8.11"
 
-[project.scripts]
-text-complexity = "src.main:main"
+[tool.poetry.group.dev.dependencies]
+ruff = ">=0.1.6"
+pre-commit = ">=3.0.0"
+pytest = ">=7.0.0"
+black = ">=23.0.0"
 
 [tool.text-complexity]
 sentence_endings = [".", "!", "?", "…"]
@@ -32,6 +35,29 @@ base = 206.836
 sentence_length = 1.52
 word_length = 65.14
 
-[tool.text-complexity.complexity_weights]
-sentence_length_weight = 0.6
-syllable_complexity_weight = 0.4
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+exclude = ["tests/"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "I", "W", "C", "N",
+    "Q", "RSE", "RET", "SIM", "TID", "ARG", "PL", "RUF"
+]
+ignore = [
+    "D100", "D104", "G004",
+    "RUF001", "RUF002", "RUF003"
+]
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
