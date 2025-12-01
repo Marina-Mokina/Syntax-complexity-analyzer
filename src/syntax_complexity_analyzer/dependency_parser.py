@@ -12,10 +12,10 @@ class DependencyParser:
         doc = self.nlp(text)
 
         return {
-            'tree_depth': self._calculate_tree_depth(doc),
-            'subordinate_clauses': self._count_subordinate_clauses(doc),
-            'max_dependency_distance': self._calculate_max_dependency_distance(doc),
-            'avg_children_per_node': self._calculate_avg_children(doc)
+            "tree_depth": self._calculate_tree_depth(doc),
+            "subordinate_clauses": self._count_subordinate_clauses(doc),
+            "max_dependency_distance": self._calculate_max_dependency_distance(doc),
+            "avg_children_per_node": self._calculate_avg_children(doc),
         }
 
     def _calculate_tree_depth(self, doc) -> int:
@@ -36,7 +36,7 @@ class DependencyParser:
 
     def _count_subordinate_clauses(self, doc) -> int:
         """Count subordinate clauses based on syntactic relations"""
-        subordinate_relations = ['acl', 'advcl', 'ccomp', 'csubj']
+        subordinate_relations = ["acl", "advcl", "ccomp", "csubj"]
         count = 0
         for token in doc:
             if token.dep_ in subordinate_relations:
