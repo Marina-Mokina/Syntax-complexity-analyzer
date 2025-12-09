@@ -82,7 +82,7 @@ class DependencyParser:
         """
         return sum(1 for sent in self.doc.sents
                    for token in sent.tokens
-                   if token.rel in {'mark', 'nsubj'})
+                   if token.rel in {'mark'})
 
     def calculate_max_dependency_distance(self) -> int:
         """

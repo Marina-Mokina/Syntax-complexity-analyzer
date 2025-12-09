@@ -142,9 +142,9 @@ class ComplexityMetrics:
         easy = 90.0
 
         if fres <= very_difficult:
-            result = "Уровень: Выпускник ВУЗа. Очень сложный для чтения"
+            result = "Уровень: Выпускник вуза. Очень сложный для чтения"
         elif fres <= difficult:
-            result = "Уровень: Студент ВУЗа. Сложный для чтения"
+            result = "Уровень: Студент вуза. Сложный для чтения"
         elif fres <= fairly_difficult:
             result = "Уровень: Старшеклассник. Довольно сложный для чтения"
         elif fres <= standard:

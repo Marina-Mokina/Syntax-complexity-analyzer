@@ -1,7 +1,7 @@
-from corpus_search import CorpusSearch
-from analysis_result import AnalysisResult
-from complexity_metrics import ComplexityMetrics
-from dependency_parser import DependencyParser
+from src.syntax_complexity_analyzer.corpus_search import CorpusSearch
+from src.syntax_complexity_analyzer.analysis_result import AnalysisResult
+from src.syntax_complexity_analyzer.complexity_metrics import ComplexityMetrics
+from src.syntax_complexity_analyzer.dependency_parser import DependencyParser
 
 
 def main():
