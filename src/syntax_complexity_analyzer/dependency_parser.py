@@ -1,61 +1,153 @@
-import spacy
+from natasha import Doc, Segmenter, NewsEmbedding, NewsSyntaxParser, MorphVocab
+from collections import Counter
+import io
+import sys
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DependencyParser:
-    """Builds syntactic dependency trees for text analysis"""
+    """
+    Builds syntactic dependency trees for Russian text using Natasha library.
 
-    def __init__(self):
-        self.nlp = spacy.load("ru_core_news_sm")
+    Attributes:
+        segmenter: Natasha segmenter for sentence segmentation
+        emb: News embeddings for syntax parsing
+        syntax_parser: Natasha syntax parser for dependency trees
+        morph_vocab: Morphological vocabulary
+        text: Input text to analyze
+        doc: Parsed Natasha document object
+    """
 
-    def get_features(self, text: str) -> dict:
-        """Extracts syntactic features from text using dependency parsing"""
-        doc = self.nlp(text)
+    def __init__(self, text: str):
+        """
+        Initialize Natasha components and parse input text.
 
-        return {
-            "tree_depth": self._calculate_tree_depth(doc),
-            "subordinate_clauses": self._count_subordinate_clauses(doc),
-            "max_dependency_distance": self._calculate_max_dependency_distance(doc),
-            "avg_children_per_node": self._calculate_avg_children(doc),
-        }
+        Args:
+            text: Russian text to analyze for syntactic dependencies
+        """
+        logger.info(f"Initializing DependencyParser with text: '{text[:50]}...'")
+        self.segmenter = Segmenter()
+        self.emb = NewsEmbedding()
+        self.syntax_parser = NewsSyntaxParser(self.emb)
+        self.morph_vocab = MorphVocab()
+        self.text = text
+        self.doc = self.parse_text()
 
-    def _calculate_tree_depth(self, doc) -> int:
-        """Calculate maximum syntactic tree depth across sentences"""
-        depths = []
-        for sent in doc.sents:
-            sent_depths = [self._get_token_depth(token) for token in sent]
-            depths.append(max(sent_depths) if sent_depths else 0)
-        return max(depths) if depths else 0
+    def parse_text(self) -> Doc:
+        """
+        Parse text using Natasha pipeline.
 
-    def _get_token_depth(self, token) -> int:
-        """Calculate depth of a token in dependency tree"""
-        depth = 0
-        while token.head != token:
-            depth += 1
-            token = token.head
-        return depth
+        Returns:
+            Doc: Natasha document object with segmented sentences and parsed syntax
+        """
+        doc = Doc(self.text)
+        doc.segment(self.segmenter)
+        doc.parse_syntax(self.syntax_parser)
+        return doc
 
-    def _count_subordinate_clauses(self, doc) -> int:
-        """Count subordinate clauses based on syntactic relations"""
-        subordinate_relations = ["acl", "advcl", "ccomp", "csubj"]
-        count = 0
-        for token in doc:
-            if token.dep_ in subordinate_relations:
-                count += 1
-        return count
+    def calculate_tree_depth(self) -> int:
+        """
+        Calculate maximum depth of dependency tree from Natasha tokens.
 
-    def _calculate_max_dependency_distance(self, doc) -> int:
-        """Calculate maximum distance between head and dependent tokens"""
-        max_distance = 0
-        for token in doc:
-            if token.head != token:  # Skip root token
-                distance = abs(token.i - token.head.i)
-                max_distance = max(max_distance, distance)
-        return max_distance
+        Returns:
+            int: Maximum depth of dependency tree
+        """
+        max_depth = 0
 
-    def _calculate_avg_children(self, doc) -> float:
-        """Calculate average number of children per token"""
-        if len(doc) == 0:
-            return 0.0
+        token_dict = {token.id: token for token in self.doc.tokens}
 
-        total_children = sum(len(list(token.children)) for token in doc)
-        return total_children / len(doc)
+        for token in self.doc.tokens:
+            depth = 0
+            current = token
+
+            while current.head_id is not None and current.head_id in token_dict:
+                depth += 1
+                current = token_dict[current.head_id]
+
+                if depth > 100:
+                    break
+
+            max_depth = max(max_depth, depth)
+
+        return max_depth
+
+    def count_subordinate_clauses(self) -> int:
+        """
+        Count subordinate clauses based on syntactic relations.
+
+        Returns:
+            int: Number of subordinate clauses detected
+        """
+        return sum(1 for sent in self.doc.sents
+                   for token in sent.tokens
+                   if token.rel in {'mark', 'nsubj'})
+
+    def calculate_max_dependency_distance(self) -> int:
+        """
+        Calculate maximum distance between a token and its head in linear order.
+
+        Returns:
+            int: Maximum dependency distance in the document
+        """
+        distances = (
+            abs(i - (int(token.head_id.split('_')[-1]) - 1))
+            for sent in self.doc.sents
+            for i, token in enumerate(sent.tokens)
+            if token.head_id and '_' in token.head_id
+        )
+
+        return max(distances, default=0)
+
+    def calculate_avg_children(self) -> float:
+        """
+        Calculate average number of children per token in dependency trees.
+
+        Returns:
+            float: Average number of children per token
+        """
+        head_counts = Counter(
+            token.head_id
+            for sent in self.doc.sents
+            for token in sent.tokens
+            if token.head_id
+        )
+
+        total_children = sum(
+            head_counts.get(f"{i + 1}_{j}", 0)
+            for i, sent in enumerate(self.doc.sents)
+            for j in range(len(sent.tokens))
+        )
+
+        total_tokens = sum(len(sent.tokens) for sent in self.doc.sents)
+
+        return total_children / total_tokens if total_tokens else 0.0
+
+    def get_tree_visualization(self) -> str:
+        """
+        Generate ASCII tree visualization of dependency trees.
+
+        Returns:
+            str: String containing ASCII tree visualizations for all sentences
+        """
+        result = []
+        for i, sent in enumerate(self.doc.sents[:2], 1):
+            result.append(f"Sentence {i}: '{sent.text}'")
+
+            try:
+                old_stdout = sys.stdout
+                sys.stdout = io.StringIO()
+
+                sent.syntax.print()
+                tree_output = sys.stdout.getvalue()
+
+                sys.stdout = old_stdout
+                result.append(tree_output)
+
+            except Exception as e:
+                result.append(f"Failed to display tree: {str(e)}")
+                for token in sent.tokens:
+                    result.append(f"  {token.text} ({token.rel}) → {token.head_id}")
+
+        return '\n'.join(result)

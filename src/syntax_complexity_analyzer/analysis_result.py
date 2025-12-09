@@ -1,47 +1,53 @@
 class AnalysisResult:
-    """Represents and displays analysis results"""
+    """Represents and displays text analysis results"""
 
-    def __init__(self, text: str, metrics: dict, features: dict):
+    def __init__(self, text: str, complexity_metrics: 'ComplexityMetrics', dependency_parser: 'DependencyParser'):
+        """
+        Initialize AnalysisResult with text and analyzer objects
+
+        Args:
+            text (str): Original input text for analysis
+            complexity_metrics (ComplexityMetrics): Object containing readability metrics
+            dependency_parser (DependencyParser): Object containing syntactic analysis results
+        """
         self.text = text
-        self.metrics = metrics
-        self.features = features
-
-    def determine_complexity(self, fres: float) -> str:
-        """Assess the level of difficulty in understanding the text."""
-        very_difficult = 30.0
-        difficult = 50.0
-        fairly_difficult = 60.0
-        standard = 70.0
-        fairly_easy = 80.0
-        easy = 90.0
-
-        if fres <= very_difficult:
-            result = "Level: College Graduate. Very difficult to read"
-        elif fres <= difficult:
-            result = "Level: College Student. Difficult to read"
-        elif fres <= fairly_difficult:
-            result = "Level: High School Student. Fairly difficult to read"
-        elif fres <= standard:
-            result = "Level: 8th-9th Grade Student. Standard text"
-        elif fres <= fairly_easy:
-            result = "Level: 7th Grade Student. Fairly easy to read"
-        elif fres <= easy:
-            result = "Level: 6th Grade Student. Easy to read"
-        else:
-            result = "Level: 5th Grade Student. Very easy to read"
-
-        return result
+        self.complexity = complexity_metrics
+        self.parser = dependency_parser
 
     def display(self) -> None:
-        """Displays analysis results in console"""
-        print(f"Text: {self.text}")
-        print("Complexity metrics:")
-        for metric, value in self.metrics.items():
-            print(
-                f"  {metric}: {value:.2f}"
-                if isinstance(value, float)
-                else f"  {metric}: {value}"
-            )
+        """Displays complete analysis results in console with clear structure"""
 
-        complexity_level = self.determine_complexity(self.metrics["readability_score"])
-        print(f"\n{complexity_level}")
+        print("Отчет по анализу уровня сложности текста\n")
+
+        print("1. Метрики удобочитаемости")
+
+        avg_sentence_length = self.complexity._avg_sentence_length()
+        avg_word_length = self.complexity._avg_word_length()
+        fres = self.complexity._calculate_readability_score(avg_sentence_length, avg_word_length)
+
+        print(f"    Средняя длина предложения в словах: {avg_sentence_length:.2f}")
+        print(f"    Среднее длина слова в слогах: {avg_word_length:.2f}")
+        print(f"    Индекс удобочитаемости Флеша (FRES): {fres:.2f}")
+
+        print("Оценка уровня читаемости:")
+        complexity_level = self.complexity.determine_complexity(fres)
+        print(complexity_level)
+
+        print("\n2. Синтаксические характеристики")
+
+        if self.parser:
+            tree_depth = self.parser.calculate_tree_depth()
+            subordinate_clauses = self.parser.count_subordinate_clauses()
+            max_dependency_distance = self.parser.calculate_max_dependency_distance()
+            avg_children = self.parser.calculate_avg_children()
+
+            print(f"    Максимальная глубина дерева зависимостей: {tree_depth}")
+            print(f"    Количество придаточных предложений: {subordinate_clauses}")
+            print(f"    Максимальное расстояние зависимостей: {max_dependency_distance}")
+            print(f"    Среднее количество детей на токен: {avg_children:.2f}")
+
+        print("\n3. Дерево зависимостей")
+
+        if self.parser:
+            tree_visualization = self.parser.get_tree_visualization()
+            print(tree_visualization)

@@ -7,17 +7,16 @@ analyze-complexity = "syntax_complexity_analyzer.main:main"
 
 [tool.poetry]
 name = "syntax-complexity-analyzer"
-version = "0.1.0"
-description = "Анализатор синтаксической сложности текста для русского языка"
+version = "1.0.0"
+description = "Сервис для анализа синтаксической сложности текста для русского языка"
 readme = "README.md"
 packages = [
-    {include = "syntax_complexity_analyzer", from = "src"},
-    {include = "pyproject.toml"}
+    {include = "syntax_complexity_analyzer", from = "src"}
 ]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
-spacy = "3.8.11"
+natasha = ">=1.5.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = ">=0.1.6"
